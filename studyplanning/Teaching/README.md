@@ -1,72 +1,65 @@
-# QwenPaw 源码学习指南
+# QwenPaw Agent 项目学习路线（总分总）
 
-## 课程简介
+本课程以 **Agent 项目开发者**视角，使用“总分总”的结构化方式，系统学习一个可落地的 Agent 工程（以 QwenPaw 为样例）的核心维度：从项目定位 → 架构分层 → Agent 主循环 → 上下文/记忆 → 工具/Skills/MCP → 多智能体协作 → API 路由层 → 安全治理 → 综合实战与优化。
 
-欢迎来到 QwenPaw 源码学习课程！本课程旨在帮助您从零开始，逐层深入地理解 QwenPaw 项目的架构设计、核心功能和实现原理。
+你会收获的不是“概念堆叠”，而是能直接迁移到自己项目的工程方法：如何划分模块、如何设计扩展点、如何把 LLM 的不确定性装进可控的系统边界里。
 
-QwenPaw 是一个功能强大的个人 AI 助手，具有以下核心特性：
-- **完全可控**：内存和个性化完全由您控制，可本地部署或云部署
-- **技能扩展**：内置调度、PDF/Office 处理、新闻摘要等功能，支持自定义技能
-- **多代理协作**：创建多个独立代理，支持代理间通信协作
-- **多层安全**：工具防护、文件访问控制、技能安全扫描
-- **多渠道支持**：钉钉、飞书、微信、Discord、Telegram 等
-- **记忆进化与主动服务**：从交互中学习，主动为您服务
+## 如何使用这套材料
 
-## 模块目录
+- 推荐阅读顺序：先读 [Course\_Syllabus.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Course_Syllabus.md)，再按模块逐课推进。
+- 每一课都包含：学习目标、关键问题、代码走读路线、关键代码讲解（带可点击锚点）、动手练习、验收清单、下一课预告。
+- 默认受众：后端/算法开发者（FastAPI + 运行器 + 任务/工具/安全/配置视角）。前端控制台仅在“API 路由层”里做最低必要解释。
 
-本课程分为以下六个模块，从宏观到微观，循序渐进地讲解 QwenPaw 的源码结构：
+## 总体地图（从“总”到“分”）
 
-### 模块 1：全局架构与设计理念
-- [Lesson 1.1: 项目目标与核心价值](Module_01_Lesson_01_project_goals.md)
-- [Lesson 1.2: 顶层目录结构与模块划分](Module_01_Lesson_02_directory_structure.md)
-- [Lesson 1.3: 关键技术选型与依赖](Module_01_Lesson_03_tech_stack.md)
+为了让你在阅读细节前先有全局坐标，这里给出 QwenPaw 的“最短主链路”：
 
-### 模块 2：核心代理系统
-- [Lesson 2.1: 代理架构与生命周期](Module_02_Lesson_01_agent_architecture.md)
-- [Lesson 2.2: 模型管理与调用](Module_02_Lesson_02_model_management.md)
-- [Lesson 2.3: 命令处理与路由](Module_02_Lesson_03_command_handling.md)
+1. **HTTP 入口与多智能体路由**：FastAPI app 装配 + 中间件注入 agent\_id
+   - [\_app.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/_app.py#L71-L216)（动态 runner）
+   - [agent\_scoped.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/routers/agent_scoped.py#L15-L63)（从 path/header 注入 agent\_id）
+2. **Workspace/Runner**：按 agent\_id 懒加载工作区，Runner 驱动一次 query 的完整生命周期
+   - [multi\_agent\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/multi_agent_manager.py#L22-L137)
+   - [runner.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L107-L259)（命令/skills 注入与短路）
+3. **Agent 主体**：ReActAgent + 工具/skills/memory/context/guard 的组装
+   - [react\_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L79-L215)（QwenPawAgent 初始化）
+   - [react\_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L216-L410)（工具注册、skills 注册、sys\_prompt 构建）
+4. **安全与治理**：工具调用前拦截（deny/guard/approval），把风险从“事后补救”前移到“事前决策”
+   - [tool\_guard\_mixin.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/tool_guard_mixin.py#L138-L280)（\_acting 拦截与决策）
+   - [engine.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/security/tool_guard/engine.py#L54-L235)（guardians 编排与规则加载）
 
-### 模块 3：技能系统
-- [Lesson 3.1: 技能架构与加载机制](Module_03_Lesson_01_skill_architecture.md)
-- [Lesson 3.2: 内置技能分析](Module_03_Lesson_02_builtin_skills.md)
-- [Lesson 3.3: 自定义技能开发](Module_03_Lesson_03_custom_skills.md)
+## 课程目录（跳转）
 
-### 模块 4：内存与上下文管理
-- [Lesson 4.1: 内存系统架构](Module_04_Lesson_01_memory_architecture.md)
-- [Lesson 4.2: 上下文管理机制](Module_04_Lesson_02_context_management.md)
-- [Lesson 4.3: 记忆进化与主动服务](Module_04_Lesson_03_memory_evolving.md)
+- Module 01：总体概述（发展现状 / 学习框架 / 学习路径）
+  - [Module\_01\_Lesson\_01\_overview.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_01_overview.md)
+- Module 02：项目定位与整体架构（应用场景 / 分层设计 / 模块交互）
+  - [Module\_02\_Lesson\_01\_positioning\_and\_architecture.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_02_Lesson_01_positioning_and_architecture.md)
+- Module 03：Agent 主体与上下文/记忆/状态（决策系统 / 推理机制 / 上下文工程 / 记忆管理 / 状态管理）
+  - [Module\_03\_Lesson\_01\_agent\_core\_loop.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_03_Lesson_01_agent_core_loop.md)
+  - [Module\_03\_Lesson\_02\_context\_memory\_state.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_03_Lesson_02_context_memory_state.md)
+- Module 04：工具、Skills、MCP 与多智能体协作（工具管理 / Skills 体系 / MCP 集成 / 多智能体协作）
+  - [Module\_04\_Lesson\_01\_tools\_skills\_mcp\_collab.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_04_Lesson_01_tools_skills_mcp_collab.md)
+  - [Module\_04\_Lesson\_02\_multi\_agent\_collaboration\_patterns.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_04_Lesson_02_multi_agent_collaboration_patterns.md)
+- Module 05：安全与治理（数据安全 / 权限控制 / 风险识别与审批）
+  - [Module\_05\_Lesson\_01\_security\_and\_governance.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_05_Lesson_01_security_and_governance.md)
+- Module 06：API 路由层设计（路由组织 / agent-scoped / 接口契约）
+  - [Module\_06\_Lesson\_01\_api\_routing\_layer.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_06_Lesson_01_api_routing_layer.md)
+- Module 07：综合实践与总结（案例演练 / 协同优化 / 评估与进阶）
+  - [Module\_07\_Lesson\_01\_capstone\_and\_summary.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_07_Lesson_01_capstone_and_summary.md)
+- Module 08：Channels（渠道）与异步链路（收消息 / 串行消费 / 回包 / 扩展与验证）
+  - [Module\_08\_Lesson\_01\_async\_mentality\_for\_channels.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_01_async_mentality_for_channels.md)
+  - [Module\_08\_Lesson\_02\_weixin\_inbound\_to\_reply\_end\_to\_end.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_02_weixin_inbound_to_reply_end_to_end.md)
+  - [Module\_08\_Lesson\_03\_console\_contrast\_extension\_and\_tests.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_03_console_contrast_extension_and_tests.md)
 
-### 模块 5：多渠道集成
-- [Lesson 5.1: 渠道架构与扩展](Module_05_Lesson_01_channel_architecture.md)
-- [Lesson 5.2: 内置渠道实现](Module_05_Lesson_02_builtin_channels.md)
-- [Lesson 5.3: 渠道消息处理](Module_05_Lesson_03_message_processing.md)
+## 学习建议（偏后端视角）
 
-### 模块 6：安全机制
-- [Lesson 6.1: 安全架构与防护层](Module_06_Lesson_01_security_architecture.md)
-- [Lesson 6.2: 工具防护与文件访问控制](Module_06_Lesson_02_tool_guard.md)
-- [Lesson 6.3: 技能安全扫描](Module_06_Lesson_03_skill_security.md)
+- 先把“边界”想清楚：Agent 不是模型，是一个包含 **输入/输出契约、状态机、工具/权限、存储、可观测性** 的系统。
+- 读代码从“入口”开始：请求如何进来 → agent\_id 如何决定 workspace → runner 如何组装 agent → agent 如何调用工具/skills → 安全如何拦截。
+- 练习优先做“可验证”的：改一个开关、观察一个行为变化、写一个最小技能、设计一个接口契约并能被 runner/agent 消费。
 
-## 学习建议
+## 课程终点（回到“总”）
 
-1. **循序渐进**：建议按照模块顺序学习，从全局架构开始，逐步深入到具体功能实现
-2. **理论与实践结合**：每节课都包含动手练习，建议实际操作以加深理解
-3. **代码走读**：跟随课程中的代码走读路线，实际查看源码文件
-4. **问题导向**：每节课都提出了关键问题，带着问题学习会更有针对性
-5. **实验验证**：通过破坏性实验等方式验证系统的设计意图和边界情况
+当你完成本课程，你应能：
 
-## 环境准备
-
-为了更好地学习 QwenPaw 源码，建议您：
-
-1. 克隆 QwenPaw 仓库：`git clone https://github.com/agentscope-ai/QwenPaw.git`
-2. 安装依赖：参考项目 README.md 中的安装指南
-3. 启动应用：运行 `qwenpaw init --defaults` 和 `qwenpaw app`
-4. 打开控制台：访问 http://127.0.0.1:8088/ 查看界面
-
-## 学习资源
-
-- [QwenPaw 官方文档](https://qwenpaw.agentscope.io/)
-- [GitHub 仓库](https://github.com/agentscope-ai/QwenPaw)
-- [AgentScope 项目](https://github.com/agentscope-ai/agentscope)
-
-祝您学习愉快！
+- 画出自己的 Agent 项目架构图（至少包含：入口/路由、runner、agent、tools、skills、memory/context、security、observability）
+- 为每个核心维度给出“工程落点”：对应模块、接口、数据结构、失败模式与测试策略
+- 在不改动核心循环的情况下，扩展新工具、新 skills、新 MCP 客户端或新 agent

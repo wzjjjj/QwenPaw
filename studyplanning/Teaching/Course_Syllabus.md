@@ -1,134 +1,92 @@
-# QwenPaw 源码学习课程大纲
+# 课程大纲：Agent 项目开发（以 QwenPaw 为例）
 
-## 课程概述
+本大纲只放“课程结构 + 每课学习目标”。正文请进入各 Lesson 文件。
 
-本课程旨在帮助开发者深入理解 QwenPaw 项目的架构设计、核心功能和实现原理。通过从宏观到微观的学习路径，掌握 QwenPaw 的技术架构和开发模式，为定制化开发和贡献代码打下基础。
+## 总体目标
 
-## 模块结构
+- 能从零设计一个可运行、可扩展、可治理的 Agent 系统（而不只是“把 LLM 接上工具”）
+- 能读懂 QwenPaw 的关键链路，并把其设计方法迁移到自己的项目
+- 能基于明确的接口契约与安全边界扩展：工具、Skills、MCP、多智能体、API 路由
 
-### 模块 1：全局架构与设计理念
+## 模块结构（总分总）
 
-**学习目标**：了解 QwenPaw 的整体架构设计、核心价值和技术栈选择。
+### Module 01：总体概述（先建立全局坐标）
 
-1. **Lesson 1.1: 项目目标与核心价值**
-   - 理解 QwenPaw 的设计目标和核心价值
-   - 掌握 QwenPaw 的主要功能和应用场景
-   - 了解项目的发展历程和版本演进
+- Lesson 01：行业现状、应用前景与学习路径  
+  - 理解 Agent 技术从“对话”走向“可执行系统”的关键驱动力  
+  - 给出本课程的学习框架、成果验收与关键技术节点  
+  - 建立 QwenPaw 的主链路心智模型（入口 → runner → agent → tools/skills → memory/context → security）
+  - 入口：[Module_01_Lesson_01_overview.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_01_overview.md)
 
-2. **Lesson 1.2: 顶层目录结构与模块划分**
-   - 分析项目的目录结构和组织方式
-   - 理解各个模块的职责和边界
-   - 掌握项目的整体架构层次
+### Module 02：项目定位与整体架构（把“要做什么”变成“系统怎么落地”）
 
-3. **Lesson 1.3: 关键技术选型与依赖**
-   - 分析项目的技术栈选择
-   - 了解核心依赖库的作用
-   - 掌握项目的构建和部署方式
+- Lesson 01：项目定位 + 架构分层 + 模块交互  
+  - 能给自己的 Agent 项目写出场景/价值主张/目标用户画像  
+  - 能画出分层架构（API 路由层 / Runner 层 / Agent 层 / 能力层 / 基础设施与治理层）  
+  - 能在代码里找到 QwenPaw 的层间边界与交互点（尤其是 multi-agent 与 agent-scoped 路由）
+  - 入口：[Module_02_Lesson_01_positioning_and_architecture.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_02_Lesson_01_positioning_and_architecture.md)
 
-### 模块 2：核心代理系统
+### Module 03：Agent 主体与上下文/记忆/状态（把“不确定的推理”装进“可控的执行循环”）
 
-**学习目标**：深入理解 QwenPaw 的代理系统架构、模型管理和命令处理机制。
+- Lesson 01：Agent 主体（决策系统 / 推理机制 / 行为模式）  
+  - 理解 ReAct loop 的工程实现：输入组织、工具注册、sys_prompt、hooks  
+  - 能解释 QwenPawAgent 初始化时各组件的责任边界  
+  - 入口：[Module_03_Lesson_01_agent_core_loop.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_03_Lesson_01_agent_core_loop.md)
 
-1. **Lesson 2.1: 代理架构与生命周期**
-   - 理解代理的基本概念和架构设计
-   - 掌握代理的生命周期管理
-   - 分析代理的状态管理和转换
+- Lesson 02：上下文工程 + 记忆管理 + 状态管理  
+  - 理解“上下文窗口”和“长期记忆”在工程上的分工：压缩/裁剪 vs 检索/沉淀  
+  - 能描述并实现一个最小可用的上下文更新策略与记忆检索策略  
+  - 能在系统里识别关键状态（会话/任务/计划/工具审批）并建模为可观测状态机  
+  - 入口：[Module_03_Lesson_02_context_memory_state.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_03_Lesson_02_context_memory_state.md)
 
-2. **Lesson 2.2: 模型管理与调用**
-   - 了解模型工厂的设计和实现
-   - 掌握不同模型的配置和调用方式
-   - 分析模型选择和路由机制
+### Module 04：工具、Skills、MCP 与多智能体协作（扩展与编排）
 
-3. **Lesson 2.3: 命令处理与路由**
-   - 理解命令处理的流程和机制
-   - 掌握命令路由和分发策略
-   - 分析命令执行的安全控制
+- Lesson 01：工具管理 + Skills + MCP + 多智能体协作  
+  - 能设计工具接口、调用流程与选择策略（含失败模式）  
+  - 能理解 Skills 的“封装形态”和“运行时加载方式”  
+  - 能解释 MCP 客户端的生命周期管理与热更新策略  
+  - 能给出一套可落地的多智能体协作模式（主从/团队/路由/仲裁）  
+  - 入口：[Module_04_Lesson_01_tools_skills_mcp_collab.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_04_Lesson_01_tools_skills_mcp_collab.md)
+- Lesson 02：多智能体协作的工程落地（机制 + 模式 + 反模式）  
+  - 能区分“运行时多智能体（workspace 隔离）”与“协作多智能体（agent-to-agent 通信）”  
+  - 能走通 inter-agent chat：list_agents/chat_with_agent/submit_to_agent/check_agent_task  
+  - 能掌握 session_id/root_session_id 在跨 agent 协作里的作用与风险点  
+  - 入口：[Module_04_Lesson_02_multi_agent_collaboration_patterns.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_04_Lesson_02_multi_agent_collaboration_patterns.md)
 
-### 模块 3：技能系统
+### Module 05：安全与治理（让 Agent 可在真实环境运行）
 
-**学习目标**：掌握 QwenPaw 的技能系统架构、内置技能实现和自定义技能开发。
+- Lesson 01：安全与治理（数据安全 / 权限控制 / 工具守卫 / 技能扫描）  
+  - 理解“事前守卫 + 事中审批 + 事后审计”的分层治理方法  
+  - 能把风险识别与审批结果回灌到对话上下文中，让 LLM 自己学会规避  
+  - 入口：[Module_05_Lesson_01_security_and_governance.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_05_Lesson_01_security_and_governance.md)
 
-1. **Lesson 3.1: 技能架构与加载机制**
-   - 理解技能系统的整体架构
-   - 掌握技能的加载和注册机制
-   - 分析技能的执行流程和生命周期
+### Module 06：API 路由层（系统边界与接口契约）
 
-2. **Lesson 3.2: 内置技能分析**
-   - 了解内置技能的分类和功能
-   - 分析核心技能的实现原理
-   - 掌握技能的配置和使用方式
+- Lesson 01：API 路由层设计  
+  - 能组织路由模块、划分资源边界与版本/多租户策略  
+  - 能理解 QwenPaw 的 agent-scoped 路由与上下文注入机制  
+  - 能为 “agent + workspace + skills/tools/mcp” 设计稳定 API 契约  
+  - 入口：[Module_06_Lesson_01_api_routing_layer.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_06_Lesson_01_api_routing_layer.md)
 
-3. **Lesson 3.3: 自定义技能开发**
-   - 学习自定义技能的开发规范
-   - 掌握技能的打包和部署方法
-   - 分析技能的安全性和最佳实践
+### Module 07：综合实践与总结（回到“总”）
 
-### 模块 4：内存与上下文管理
+- Lesson 01：典型案例实战 + 维度协同 + 评估与进阶  
+  - 完成一个端到端的案例：从需求 → 架构 → 扩展点（Skills/Tools/MCP）→ 治理 → 验收  
+  - 学会系统优化方法（性能、可靠性、可扩展性、安全）  
+  - 给出学习成果评估与进阶路线（读源码/改需求/写测试/做发布）  
+  - 入口：[Module_07_Lesson_01_capstone_and_summary.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_07_Lesson_01_capstone_and_summary.md)
 
-**学习目标**：深入理解 QwenPaw 的内存系统架构、上下文管理和记忆进化机制。
+### Module 08：Channels（渠道）与异步链路（把 Agent 接入真实世界）
 
-1. **Lesson 4.1: 内存系统架构**
-   - 理解内存系统的设计理念
-   - 掌握内存的存储和检索机制
-   - 分析内存的组织和管理策略
-
-2. **Lesson 4.2: 上下文管理机制**
-   - 了解上下文的概念和作用
-   - 掌握上下文的构建和维护
-   - 分析上下文的压缩和优化策略
-
-3. **Lesson 4.3: 记忆进化与主动服务**
-   - 理解记忆进化的设计原理
-   - 掌握主动服务的触发机制
-   - 分析记忆与行为的关联机制
-
-### 模块 5：多渠道集成
-
-**学习目标**：掌握 QwenPaw 的渠道架构、内置渠道实现和消息处理机制。
-
-1. **Lesson 5.1: 渠道架构与扩展**
-   - 理解渠道系统的整体架构
-   - 掌握渠道的注册和管理机制
-   - 分析渠道的扩展和适配策略
-
-2. **Lesson 5.2: 内置渠道实现**
-   - 了解内置渠道的分类和功能
-   - 分析核心渠道的实现原理
-   - 掌握渠道的配置和使用方式
-
-3. **Lesson 5.3: 渠道消息处理**
-   - 理解消息处理的流程和机制
-   - 掌握消息的格式转换和路由
-   - 分析消息处理的异常和重试策略
-
-### 模块 6：安全机制
-
-**学习目标**：深入理解 QwenPaw 的安全架构、工具防护和技能安全扫描机制。
-
-1. **Lesson 6.1: 安全架构与防护层**
-   - 理解安全系统的整体架构
-   - 掌握安全防护的层次和策略
-   - 分析安全机制的设计原理
-
-2. **Lesson 6.2: 工具防护与文件访问控制**
-   - 了解工具防护的实现机制
-   - 掌握文件访问控制的策略
-   - 分析命令执行的安全检查
-
-3. **Lesson 6.3: 技能安全扫描**
-   - 理解技能安全扫描的原理
-   - 掌握安全风险的检测和处理
-   - 分析技能安全的最佳实践
-
-## 学习路径
-
-建议按照以下路径进行学习：
-
-1. **模块 1** → 建立全局认知，了解项目的整体架构和设计理念
-2. **模块 2** → 掌握核心代理系统，理解代理的工作原理
-3. **模块 3** → 学习技能系统，了解如何扩展 QwenPaw 的功能
-4. **模块 4** → 深入内存与上下文管理，理解 QwenPaw 的智能机制
-5. **模块 5** → 掌握多渠道集成，了解如何与外部系统交互
-6. **模块 6** → 学习安全机制，理解 QwenPaw 的安全保障措施
-
-每个模块的课程都包含理论讲解、代码走读和动手练习，建议按照顺序学习，逐步深入理解 QwenPaw 的技术架构和实现原理。
+- Lesson 01：Channels 的异步心智模型（读懂线程、事件循环与队列）  
+  - 能解释 event loop / coroutine / task / async generator 在渠道链路中的角色  
+  - 能理解 weixin 为何采用“后台线程 + 自建 event loop”，以及 thread-safe 入队的必要性  
+  - 入口：[Module_08_Lesson_01_async_mentality_for_channels.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_01_async_mentality_for_channels.md)
+- Lesson 02：Weixin 一条消息的端到端链路（入参/出参/调用方逐节点串联）  
+  - 能把平台消息 → native payload → AgentRequest → runner event → 回包的主链路串起来  
+  - 能对每个关键节点说清调用方、入参形状、出参/副作用（以 weixin 为主例）  
+  - 入口：[Module_08_Lesson_02_weixin_inbound_to_reply_end_to_end.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_02_weixin_inbound_to_reply_end_to_end.md)
+- Lesson 03：Console 对比 + 新渠道设计清单 + 如何验证  
+  - 能对比 Console/Weixin 的模型差异，理解 BaseChannel/ChannelManager 的抽象边界  
+  - 能按“必做/选做”清单设计并接入一个新渠道，并知道如何用现有测试/契约做验证  
+  - 入口：[Module_08_Lesson_03_console_contrast_extension_and_tests.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_03_console_contrast_extension_and_tests.md)
