@@ -72,6 +72,13 @@ QwenPaw 的做法是把这些能力拆到独立组件，再在初始化时“挂
 - context manager 通过 hooks 接入： [react_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L429-L452)
 - tool guard 通过 `_acting` 拦截接入： [tool_guard_mixin.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/tool_guard_mixin.py#L138-L176)
 
+#### 1.1.5 补充：模型自适应重试（从失败中学习“模型怪癖”）
+
+LLM 的失败模式不是纯“网络抖动”，很多时候是模型/供应商对请求格式的隐式约束（例如：某些 thinking 模式模型要求历史里的每条 assistant 消息都携带特定字段）。1.1.5 起，运行时在遇到可识别的错误形态后，会“学习”该模型的约束，并在后续请求里自动修补再试，减少同类错误反复出现。
+
+- 落点：`RetryChatModel` 会在识别到特定 400 错误后注入缺失字段，并缓存为 per-model 能力标记（后续自动应用）  
+  - [retry_chat_model.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/providers/retry_chat_model.py#L342-L447)
+
 ## 代码走读路线（分）
 
 按“循环的装配顺序”读：
@@ -133,4 +140,3 @@ Agent 主体的工程化关键，是把模型放进一个受约束的循环，�
 ## 下一课预告
 
 - 进入 [Module_03_Lesson_02_context_memory_state.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_03_Lesson_02_context_memory_state.md)
-

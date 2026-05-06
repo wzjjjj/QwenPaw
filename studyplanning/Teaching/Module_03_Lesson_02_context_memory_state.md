@@ -52,6 +52,14 @@ QwenPaw 在接口层明确了 ContextManager 的职责：压缩、裁剪、健�
 
 你可以把它理解为：**ContextManager 不是“存储”，而是“上下文窗口治理器”。**
 
+#### 1.1.5 补充：上下文压缩的降级机制（压缩失败/被禁用时不“中止流程”）
+
+1.1.5 之后，上下文治理的默认策略更偏“保可用”：当 LLM 压缩失败（异常、输出不合规、空摘要等）或压缩被禁用时，不再直接中止或维持原分割，而是会放宽保留窗口重新切分，尽可能把更多“近期轮次”留在上下文里。
+
+- 目标：优先保留最近消息，宁可丢更老的历史，也不要让压缩流程卡死或让上下文治理失效
+- 落点：`LightContextManager.pre_reasoning` 内对 compaction 结果的兜底分支  
+  - [light_context_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/context/light_context_manager.py#L710-L921)
+
 ### 2) 记忆管理：短期 vs 长期，存储结构、检索与更新
 
 一个工程化的记忆系统至少要回答三件事：
@@ -66,6 +74,13 @@ QwenPaw 用抽象基类把记忆管理器定义成“可注入的后端”，并
 
 更关键的是：它把部分记忆能力以工具形式暴露给 agent（list_memory_tools），这意味着你可以让 LLM 自己在需要时检索/写入，但仍在工具层受治理。  
 - [BaseMemoryManager.list_memory_tools](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/memory/base_memory_manager.py#L66-L76)
+
+#### 1.1.5 补充：记忆检索支持 CJK 字符级分词（保留拉丁字母/数字连续串）
+
+当你的用户 query 含中文/日文/韩文且没有明显空格分词时，纯“按空格切词”会导致检索召回很差。1.1.5 起，记忆搜索会对 CJK 以“字符 1-gram”分词，同时保留拉丁字母和数字的完整连续串，兼顾中文召回与英文/ID 精确性。
+
+- 落点：`ReMeLightMemoryManager.tokenize_query` 在 search 前对 query 做 tokenization  
+  - [reme_light_memory_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/memory/reme_light_memory_manager.py#L279-L388)
 
 ### 3) 状态管理：把“隐式行为”显式化为状态机
 
@@ -136,4 +151,3 @@ QwenPaw 的多智能体管理把“workspace 生命周期状态”显式化为�
 ## 下一课预告
 
 - 进入 [Module_04_Lesson_01_tools_skills_mcp_collab.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_04_Lesson_01_tools_skills_mcp_collab.md)
-

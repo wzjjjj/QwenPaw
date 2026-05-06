@@ -79,6 +79,19 @@ Agent 项目的 API 契约建议具备三类统一语义：
 你可以参考 QwenPaw 在 skills 扫描失败时的结构化错误返回，它不仅有 HTTP status，还能携带 findings 细节：  
 - [_scan_error_payload](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/routers/skills.py#L70-L99)
 
+### 1.1.5 补充：ACP 配置接口、降级继承与时区规范化（属于“契约稳定”的一部分）
+
+一些看起来“偏配置/偏控制台”的需求，本质也是 API 契约稳定性问题：前端/UI 只是表现层，真正需要稳定的是后端的配置接口与默认行为。
+
+- **ACP Agent 重命名/删除（控制台能力的后端落点）**：ACP agents 是一个 dict 配置集合；控制台做“重命名/删除”时，本质是在更新这份配置并触发热重载  
+  - 获取/更新 ACP config：`GET/PUT /api/config/acp`  
+  - 获取/更新单个 ACP agent：`GET/PUT /api/config/acp/{agent_name}`  
+  - [config.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/routers/config.py#L394-L505)
+- **ACP 降级继承**：当 workspace 缺少 `agent.json` 需要生成降级配置时，会从根配置继承 ACP 配置，避免“降级后 ACP 失效”  
+  - [build_fallback_agent_profile_config](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/config/config.py#L1625-L1677)
+- **时区名称规范化**：对非标准/旧别名时区做映射，最终落到 IANA 标识符（例如 `Asia/Beijing` → `Asia/Shanghai`），让定时任务、日志时间与跨环境一致  
+  - [timezone.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/config/timezone.py#L19-L108)
+
 ## 代码走读路线（分）
 
 1. 路由聚合入口：  
@@ -110,4 +123,3 @@ Agent 项目的 API 契约建议具备三类统一语义：
 ## 下一课预告
 
 - 进入 [Module_07_Lesson_01_capstone_and_summary.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_07_Lesson_01_capstone_and_summary.md)
-

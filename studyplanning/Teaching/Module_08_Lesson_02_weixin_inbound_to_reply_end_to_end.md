@@ -41,6 +41,14 @@
   - [ChannelManager.start_all](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/channels/manager.py#L462-L494)  
   - [WeixinChannel.start](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/channels/weixin/channel.py#L1426-L1479)
 
+#### 节点 0 重点（结合我们刚刚的讨论）
+
+- `start_all()` 在主异步入口运行时，会执行 `self._loop = asyncio.get_running_loop()`，把“当前运行 start_all 的 loop”保存为 Channels 体系的主 loop；后续跨线程投递都以这个 loop 为目标。
+- `start_all()` 会初始化 `UnifiedQueueManager(consumer_fn=self._consume_queue, queue_maxsize=...)`：它负责按 `(channel_id, session_id, priority_level)` 管理队列，并在需要时自动启动消费者 Task；具体怎么串行消费/批量合并，由 `consumer_fn`（也就是 `_consume_queue`）定义。
+- `start_all()` 会对每个启用并且 `uses_manager_queue=True` 的 channel 注入 enqueue 回调：`ch.set_enqueue(_make_enqueue_cb(ch.channel))`。这一步决定了 weixin 的 `self._enqueue(native)` 实际上会走到 `ChannelManager.enqueue("weixin", native)`。
+- 回调注入这一段可以用一句话串起来：`start_all()` 把每个 channel 的 `self._enqueue` 指向一个闭包 `cb`；后续 `_on_message` 执行 `self._enqueue(native)` 时，其实就是调用 `cb(native)`，最终把 `native` 投递到 `ChannelManager` 的主 loop 并入队（节点 4–6）。
+- `await g.start()` 会真正启动各个 channel：以 weixin 为例，`WeixinChannel.start()` 会记录主 loop、创建 client，并启动 `weixin-poll` 后台线程；该线程只负责 long-poll 拉消息/解析/投递，业务处理（队列消费、runner、回包）仍在主 loop 侧完成。
+
 ### 节点 1：poll 线程进入长轮询循环
 
 - 调用方：`WeixinChannel.start()` 启动的线程
@@ -228,4 +236,3 @@ weixin 覆盖了 `send_content_parts`，所以最终落到：
 
 下一课用 Console 对比 weixin，讲清“哪些东西是 Base 抽象的一部分、哪些是渠道差异”，并总结：新增 channel 的必做/选做清单与验证方式。  
 [Module_08_Lesson_03_console_contrast_extension_and_tests.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_03_console_contrast_extension_and_tests.md)
-

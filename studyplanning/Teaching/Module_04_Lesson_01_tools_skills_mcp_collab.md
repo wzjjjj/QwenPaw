@@ -69,6 +69,13 @@ QwenPaw 在 skills_manager 中明确了“skills 不是随意字符串”，而�
 - **技能可热更新**：因为 agent 每次 query 都会重新创建（Runner 逻辑里已说明）
 - **交互体验好**：`/skill` 无输入时直接显示技能信息（更像 CLI）
 
+#### 1.1.5 性能补充：技能清单读取缓存（按文件路径 + mtime）
+
+在“热路径”上（每次请求/页面刷新都要读技能清单）重复读磁盘会放大延迟。1.1.5 起，技能清单（workspace manifest / pool manifest）读取会按“文件路径 + mtime”缓存，mtime 未变化时直接复用内存结果，减少重复 IO。
+
+- 落点：`read_skill_manifest` / `read_skill_pool_manifest` 基于 `st_mtime_ns` 的缓存读取  
+  - [skills_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/skills_manager.py#L1634-L1672)
+
 ### 3) MCP：多智能体协作协议与外部能力协议化接入
 
 把 MCP 当作“外部能力的标准化接口”，它主要解决：
@@ -81,6 +88,20 @@ QwenPaw 把 MCP 客户端管理集中到 `MCPClientManager`，核心设计点是
 - [manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/mcp/manager.py#L90-L132)
 
 这能减少阻塞，并支持运行时替换旧 client。
+
+#### 1.1.5 可靠性补充：MCP 执行超时透传到工具执行层
+
+MCP client 的 `timeout` 不只是“连接/HTTP 请求”的配置，也需要影响到“工具执行”这一步（避免工具卡死拖住 agent loop）。1.1.5 起，Agent 注册 MCP client 时会把 client.timeout 作为 `execution_timeout` 传入工具层。
+
+- 落点：`QwenPawAgent.register_mcp_clients` 注册 MCP client 时传入 `execution_timeout=client.timeout`  
+  - [react_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L478-L544)
+
+#### 1.1.5 性能补充：配置文件加载缓存（根配置/Agent 配置按 mtime 失效）
+
+当 Runner/路由层频繁读取配置（例如按 agent_id 懒加载 workspace 时），重复读磁盘会影响吞吐。1.1.5 起，根配置加载采用 mtime 缓存；文件未修改时直接返回内存对象。
+
+- 落点：`load_config` 使用文件 `st_mtime` 做缓存命中  
+  - [utils.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/config/utils.py#L538-L577)
 
 ### 4) 多智能体协作：通信机制、任务分配与协作模式
 
@@ -135,4 +156,3 @@ QwenPaw 在系统层面提供了多 agent 的运行时隔离与生命周期：
 ## 下一课预告
 
 - 进入 [Module_05_Lesson_01_security_and_governance.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_05_Lesson_01_security_and_governance.md)
-
