@@ -102,6 +102,11 @@ QwenPaw 在 skills_manager 引入扫描：
 2. 设计一个“deny list”与“guard scope”的策略：哪些工具永远禁止，哪些工具必须审批，哪些工具只做 always_run 检查。
 3. 设计技能扫描的最小规则集：至少包含“硬编码密钥检测、危险命令检测、提示词注入模式检测”三类。
 
+### 进阶练习（提升）
+
+1. 以 [tool_guard_mixin.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/tool_guard_mixin.py#L138-L176) 的“锁住决策、不锁执行”为参照，写出你自己的并发安全方案：哪些共享状态必须串行化，哪些操作必须放锁外避免拖垮吞吐。
+2. 设计一份“审批可解释性模板”：审批提示里必须包含哪些字段（tool、参数摘要、风险点、建议替代方案、回滚说明），并说明这些字段应该来自 guard engine 的哪一层输出。
+
 ## 验收清单
 
 - [ ] 能给出一张风险地图：风险分类 → 治理点 → 责任模块
@@ -116,4 +121,3 @@ QwenPaw 在 skills_manager 引入扫描：
 ## 下一课预告
 
 - 进入 [Module_06_Lesson_01_api_routing_layer.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_06_Lesson_01_api_routing_layer.md)
-

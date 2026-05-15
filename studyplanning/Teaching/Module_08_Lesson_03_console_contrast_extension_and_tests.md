@@ -208,6 +208,15 @@ Console 实现示例：
 练习 2：读 weixin 的 `meta` 字段，思考你自己的平台里等价的最小集合是什么：  
 [WeixinChannel._on_message](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/channels/weixin/channel.py#L707-L716)
 
+练习 3（提升）：写一份“最小验证用例清单”（不少于 8 条）。
+
+- 构造与发现：registry 能发现、from_config 能实例化
+- 生命周期：start/stop 幂等、异常可恢复
+- 入站：native → AgentRequest（含 session_id 规则）
+- 出站：send_content_parts 能正确使用 meta（必要 token 不丢）
+- 串行：同 session 不并发跑两个 process
+- 限流/超时：接收侧不阻塞、消费侧可取消
+
 ## 验收清单
 
 - [ ] 能解释 Console 为什么更像“展示 runner 事件流”，但仍遵守入站/出站契约

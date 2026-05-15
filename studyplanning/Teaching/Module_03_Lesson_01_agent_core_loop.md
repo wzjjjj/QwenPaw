@@ -125,6 +125,11 @@ QwenPaw 的技能解析与短路体现了这个边界：当用户输入 `/<skill
 2. 列出你项目的“工具清单”和“技能清单”，并为每个条目说明为什么是 tool/skill。
 3. 选择一个横切关注点（如上下文压缩或工具审批），写出它应该挂在哪个生命周期点，以及你会在代码里用什么机制实现（hook/middleware/mixin/manager）。
 
+### 进阶练习（提升）
+
+1. 以 [react_agent.py:reply](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L1271-L1329) 为参照，写出你自己的“请求上下文注入清单”（至少 5 项：workspace_dir、session_id、预算、超时、观测字段），并标注它们应当如何在调用链中传播。
+2. 设计一条“工具失败语义”规范：对每个工具调用，你希望统一包含哪些字段（ok/error_type/retryable/hint/elapsed），以及它如何影响下一轮 reasoning（继续、换工具、升级为人工审批、终止）。
+
 ## 验收清单
 
 - [ ] 能解释 ReAct 与 Plan-and-Execute 的工程差异（至少 2 点）

@@ -108,6 +108,11 @@ Agent 项目的 API 契约建议具备三类统一语义：
 3. 设计一个“长任务状态接口”：定义 task_id、status、progress、error、result 的字段。
 4. 设计一个“审批流接口”：定义 approval_id、tool_name、status、findings、decision_reason。
 
+### 进阶练习（提升）
+
+1. 为你的 API 契约写一份“版本演进规则”：哪些字段允许新增但不允许删除，哪些字段要用 enum 扩展，哪些字段要做兼容默认值（参考 QwenPaw 对 agent-scoped 与 header 的双支持）。
+2. 选一个你设计的接口，写出“可测试性”要求：如何用最小 mock（或 TestClient）验证状态机字段变化、错误语义、以及 agent_id 隔离是否生效。
+
 ## 验收清单
 
 - [ ] 能解释 API 层与 runner/agent 的职责边界，并能指出 QwenPaw 的对应实现点

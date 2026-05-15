@@ -2,7 +2,7 @@
 
 ## 本课总览（总）
 
-Agent 技术正在从“能聊天的模型”走向“可执行的系统工程”：它不仅要会推理，还要能 **调用工具、管理状态、处理失败、做安全治理**，并在真实环境里长期运行。  
+Agent 技术正在从“能聊天的模型”走向“可执行的系统工程”：它不仅要会推理，还要能 **调用工具、管理状态、处理失败、做安全治理**，并在真实环境里长期运行。\
 这一课先把全局坐标立起来：你将知道 *Agent 领域现在到哪了*、*这套学习路线怎么学*、以及 *在 QwenPaw 里这些概念具体落在哪些代码入口*。
 
 ## 学习目标
@@ -26,12 +26,50 @@ Agent 技术正在从“能聊天的模型”走向“可执行的系统工程�
 
 ## 对话记录要点（你问过的关键困惑）
 
-- Web Console 输入一句话后，确实是通过 HTTP 请求后端（典型是 `POST /api/agent/process`），后端再通过 Runner 走一次“单次请求生命周期”
+- Web Console 输入一句话后，确实是通过 HTTP 请求后端（当前前端实现走 `POST /api/console/chat`，并携带 `X-Agent-Id`），后端再通过 Runner 走一次“单次请求生命周期”
 - `contextvar` 在这里主要用来在异步调用链中传播 `agent_id/session_id/root_session_id`，让日志、token 统计、工具执行、审批等模块能拿到“当前正在服务的是哪个 agent”
 - “谁来执行 `stream_query` / runner 的工作”这一点容易混：框架层 `stream_query` 是统一的流式包装器，业务侧主要实现 `query_handler` 来决定要流式产出什么内容
 - `MultiAgentManager` 的作用不是做推理，而是做 workspace 生命周期管理：按 `agent_id` 懒加载、并发去重、必要时 reload
 - `Workspace.start()` 用在 workspace 第一次被拿到（懒加载）或 reload 时；`start_all()` 启动的是配套服务（runner/memory/context/mcp/chat/channel…），不是创建每次请求的 `QwenPawAgent`
 - `QwenPawAgent` 是“每次请求创建一次”的实例，创建位置在 runner 的处理函数内部
+
+### 补充：两条常见入口链路（两条都能跑同一套 Runner）
+
+#### A) Web Console 链路：`POST /api/console/chat`（前端 Chat 页面默认）
+
+```text
+浏览器/Console Chat 页面
+        │  POST /api/console/chat + X-Agent-Id: <agent_id>
+        ▼
+post_console_chat() → get_agent_for_request() → Workspace(<agent_id>)
+        ▼
+ConsoleChannel.stream_one(payload)
+        │  self._process(request) == workspace.runner.stream_query(...)
+        ▼
+TaskTracker.attach_or_start(...) → StreamingResponse(SSE)
+```
+
+特点：
+- 外层多了一套 Console 的 chat/task 管理：ChatManager、TaskTracker、reconnect/stop、标题生成等。
+- SSE 是从 TaskTracker 的队列里读出来的（断线可重连、后台可继续跑）。
+
+#### B) Runtime 通用链路：`POST /api/agent/process`（通用协议入口）
+
+```text
+客户端 POST /api/agent/process + X-Agent-Id: <agent_id>
+        ▼
+AgentContextMiddleware → set_current_agent_id(<agent_id>)
+        ▼
+AgentApp(/process) → DynamicMultiAgentRunner.stream_query(...)
+        ▼
+MultiAgentManager.get_agent(<agent_id>) → Workspace(<agent_id>)
+        ▼
+workspace.runner.stream_query(...) → StreamingResponse(SSE)
+```
+
+特点：
+- 更“直通”runner：少了 Console 的 chat/task 包装，偏 runtime 协议层。
+- SSE 由 AgentApp 直接把 runner 产出的 chunk 格式化输出（没有 TaskTracker 队列转发这一层）。
 
 ## 关键问题解答（结合 QwenPaw 的代码落点）
 
@@ -55,13 +93,13 @@ Agent 技术正在从“能聊天的模型”走向“可执行的系统工程�
 
 ### 3) QwenPaw 把“多智能体”和“单次请求的 agent 实例化”放在哪一层做？为什么？
 
-- **多智能体（按 agent_id 路由 + workspace 生命周期）**：在 `MultiAgentManager + Workspace` 这一层
-  - `MultiAgentManager.get_agent()` 懒加载并缓存 workspace（并发去重），首次会 `await Workspace.start()`：  
-    [multi_agent_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/multi_agent_manager.py#L22-L137)
-  - workspace 的启动会 `start_all()` 把配套服务拉起来：  
+- **多智能体（按 agent\_id 路由 + workspace 生命周期）**：在 `MultiAgentManager + Workspace` 这一层
+  - `MultiAgentManager.get_agent()` 懒加载并缓存 workspace（并发去重），首次会 `await Workspace.start()`：\
+    [multi\_agent\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/multi_agent_manager.py#L22-L137)
+  - workspace 的启动会 `start_all()` 把配套服务拉起来：\
     [workspace.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/workspace/workspace.py#L348-L384)
 - **单次请求的 agent 实例化（QwenPawAgent）**：在 `AgentRunner.query_handler` 内部，每次请求创建一次
-  - 这能保证每次请求的执行体干净可控，而 memory/context/mcp 等共享服务复用，性能与隔离更平衡：  
+  - 这能保证每次请求的执行体干净可控，而 memory/context/mcp 等共享服务复用，性能与隔离更平衡：\
     [runner.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L286-L770)
 
 ### 4) 从代码走读角度，应该从哪里开始读，才能最快建立系统认知？
@@ -69,13 +107,13 @@ Agent 技术正在从“能聊天的模型”走向“可执行的系统工程�
 建议用“两条线”交叉读，最不容易迷路：
 
 - **请求主链路（你今天问的这条）**
-  1. agent_id 如何注入并绑定到当前请求上下文：[agent_scoped.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/routers/agent_scoped.py#L15-L63)
-  2. 按 agent_id 路由到 workspace：[ _app.py ](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/_app.py#L71-L216)
-  3. workspace 懒加载与启动（`Workspace.start()`）：[multi_agent_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/multi_agent_manager.py#L22-L137)
+  1. agent\_id 如何注入并绑定到当前请求上下文：[agent\_scoped.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/routers/agent_scoped.py#L15-L63)
+  2. 按 agent\_id 路由到 workspace： [\_app.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/_app.py#L71-L216)&#x20;
+  3. workspace 懒加载与启动（`Workspace.start()`）：[multi\_agent\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/multi_agent_manager.py#L22-L137)
   4. 单次请求生命周期（`AgentRunner.query_handler`）：[runner.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L286-L770)
 - **扩展与治理线（决定“系统可用不可用”的那条）**
   1. MCP 客户端生命周期与热更新：[manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/mcp/manager.py#L23-L165)
-  2. Skills 管理与安全扫描入口：[skills_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/skills_manager.py#L27-L60)
+  2. Skills 管理与安全扫描入口：[skills\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/skills_manager.py#L27-L60)
   3. 工具守卫引擎（工具调用前的治理总入口）：[engine.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/security/tool_guard/engine.py#L54-L235)
 
 ## 核心概念（分）
@@ -110,39 +148,44 @@ Agent 技术正在从“能聊天的模型”走向“可执行的系统工程�
 
 建议的学习路径（从“系统入口”到“执行内核”再到“扩展与治理”）：
 
-1. **系统入口与多智能体路由**：请求如何绑定 agent_id，如何路由到不同 workspace  
-   - 动态 runner 入口：[_app.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/_app.py#L71-L216)  
-   - agent_id 注入中间件：[agent_scoped.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/routers/agent_scoped.py#L15-L63)  
-2. **Runner（一次请求的生命周期）**：命令/skills 短路、流式输出、错误兜底  
-   - skills 识别与短路：[_maybe_inject_skill](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L185-L259)  
-   - 单次请求的主处理入口：[`AgentRunner.query_handler`](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L286-L770)  
-3. **Agent 组装与主循环**：工具/skills 注册、sys_prompt 构建、hooks、MCP 工具注入  
-   - [react_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L79-L215)  
-   - [react_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L216-L541)  
-4. **上下文/记忆/状态**：压缩、裁剪、检索、沉淀与可观测状态  
-   - Context 接口：[base_context_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/context/base_context_manager.py#L15-L223)  
-   - Memory 接口：[base_memory_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/memory/base_memory_manager.py#L18-L116)  
-5. **扩展与治理（工具/Skills/MCP/安全）**：让系统“可扩展”且“可控”  
-   - MCP 生命周期管理：[manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/mcp/manager.py#L23-L165)  
-   - Skills 管理（含安全扫描）：[skills_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/skills_manager.py#L27-L60)  
-   - 工具守卫引擎：[engine.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/security/tool_guard/engine.py#L54-L235)  
+1. **系统入口与多智能体路由**：请求如何绑定 agent\_id，如何路由到不同 workspace
+   - 动态 runner 入口：[\_app.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/_app.py#L71-L216)
+   - agent\_id 注入中间件：[agent\_scoped.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/routers/agent_scoped.py#L15-L63)
+2. **Runner（一次请求的生命周期）**：命令/skills 短路、流式输出、错误兜底
+   - skills 识别与短路：[\_maybe\_inject\_skill](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L185-L259)
+   - 单次请求的主处理入口：[`AgentRunner.query_handler`](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L286-L770)
+3. **Agent 组装与主循环**：工具/skills 注册、sys\_prompt 构建、hooks、MCP 工具注入
+   - [react\_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L79-L215)
+   - [react\_agent.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L216-L541)
+4. **上下文/记忆/状态**：压缩、裁剪、检索、沉淀与可观测状态
+   - Context 接口：[base\_context\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/context/base_context_manager.py#L15-L223)
+   - Memory 接口：[base\_memory\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/memory/base_memory_manager.py#L18-L116)
+5. **扩展与治理（工具/Skills/MCP/安全）**：让系统“可扩展”且“可控”
+   - MCP 生命周期管理：[manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/mcp/manager.py#L23-L165)
+   - Skills 管理（含安全扫描）：[skills\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/skills_manager.py#L27-L60)
+   - 工具守卫引擎：[engine.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/security/tool_guard/engine.py#L54-L235)
 
 ## 代码走读路线（分）
 
 建议你按下面路线走一遍（只看“入口与接口”，不深挖实现）：
 
-1. 看 DynamicMultiAgentRunner 如何按 agent_id 找到 workspace：[_app.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/_app.py#L71-L126)
-2. 看 MultiAgentManager 如何懒加载 workspace（并发去重）：[multi_agent_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/multi_agent_manager.py#L22-L137)
-3. 看 Runner 如何识别 `/skill` 并短路：[_maybe_inject_skill](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L185-L259)
-4. 看 QwenPawAgent 如何注册工具/skills：[_create_toolkit/_register_skills](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L216-L370)
+1. 看 DynamicMultiAgentRunner 如何按 agent\_id 找到 workspace：[\_app.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/_app.py#L71-L126)
+2. 看 MultiAgentManager 如何懒加载 workspace（并发去重）：[multi\_agent\_manager.py](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/multi_agent_manager.py#L22-L137)
+3. 看 Runner 如何识别 `/skill` 并短路：[\_maybe\_inject\_skill](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/app/runner/runner.py#L185-L259)
+4. 看 QwenPawAgent 如何注册工具/skills：[\_create\_toolkit/\_register\_skills](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/react_agent.py#L216-L370)
 
 ## 动手练习（可执行）
 
 目标：只做“读代码 + 画图”，不改代码。
 
-1. 画一张“单次请求”的时序图（5 个框就够）：HTTP → agent_id 注入 → workspace → runner → agent。
+1. 画一张“单次请求”的时序图（5 个框就够）：HTTP → agent\_id 注入 → workspace → runner → agent。
 2. 画一张“能力扩展”的依赖图：tools / skills / mcp / memory / context / security 分别挂在哪一层。
 3. 给每个框写一句“责任边界”，要求可被验收（例如：Runner 不负责长期存储；安全守卫必须在 tool 执行前介入）。
+
+### 进阶练习（提升）
+
+1. 找到“入口层只做 HTTP 语义”的证据：列出 2 个 router 文件，说明它们如何把执行下沉到 workspace/runner（不需要读完实现，能指到调用点即可）。
+2. 用你自己的话写出一条“失败语义规则”：什么错误应该在 API 层表现为 4xx，什么错误应该是 5xx，什么错误要回传结构化 detail 让模型自我修复。
 
 ## 验收清单
 
@@ -152,10 +195,10 @@ Agent 技术正在从“能聊天的模型”走向“可执行的系统工程�
 
 ## 本课小结（总）
 
-你已经把“Agent 工程”从抽象概念落到了可读的代码入口：  
-**系统入口/路由** 决定“谁在服务”；**Runner** 决定“一次请求如何跑完”；**Agent 组装** 决定“模型如何被约束为可执行系统”；而 **上下文/记忆/安全** 决定“长期运行是否可控”。  
+你已经把“Agent 工程”从抽象概念落到了可读的代码入口：\
+**系统入口/路由** 决定“谁在服务”；**Runner** 决定“一次请求如何跑完”；**Agent 组装** 决定“模型如何被约束为可执行系统”；而 **上下文/记忆/安全** 决定“长期运行是否可控”。\
 下一课开始，我们把“要做什么（定位）”和“怎么落地（架构）”对齐，避免后续维度学习变成碎片知识。
 
 ## 下一课预告
 
-- 进入 [Module_02_Lesson_01_positioning_and_architecture.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_02_Lesson_01_positioning_and_architecture.md)
+- 进入 [Module\_02\_Lesson\_01\_positioning\_and\_architecture.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_02_Lesson_01_positioning_and_architecture.md)

@@ -136,6 +136,11 @@ QwenPaw 的多智能体管理把“workspace 生命周期状态”显式化为�
 2. 列出你系统中“上下文来源清单”，并给每项打分：重要性/稳定性/隐私风险。
 3. 选一个工具输出（例如 grep 的结果），设计一份“裁剪后摘要结构”（字段：query、top_matches、files、notes）。
 
+### 进阶练习（提升）
+
+1. 以 [LightContextManager.pre_reasoning](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/context/light_context_manager.py#L710-L921) 为参照，写一份“压缩失败降级策略”说明：触发条件、降级路径、以及你会保留哪些最近信息（按优先级）。
+2. 以 [BaseMemoryManager.list_memory_tools](file:///d:/编程学习记录/QwenPaw/src/qwenpaw/agents/memory/base_memory_manager.py#L66-L76) 为参照，设计一套“记忆工具 API”最小集合（retrieve/write/update），并写出每个工具的权限/审计字段（避免长期记忆变成数据泄露通道）。
+
 ## 验收清单
 
 - [ ] 能清晰区分：上下文窗口治理 vs 长期记忆沉淀（职责不混）
