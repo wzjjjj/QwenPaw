@@ -632,7 +632,7 @@ NapCat  ──反向 WS──▶  QwenPaw (:6199/ws)
 
 ### 工作原理
 
-- **登录方式**：首次使用时扫描二维码授权，Token 自动持久化到本地文件（默认 `~/.qwenpaw/weixin_bot_token`），后续启动无需重复扫码。
+- **登录方式**：首次使用时扫描二维码授权，Token 自动持久化到本地文件（默认 `~/.qwenpaw/wechat_bot_token`），后续启动无需重复扫码。
 - **消息接收**：通过 HTTP 长轮询（`getupdates`）持续拉取新消息，支持文本、图片、语音（ASR 转录）和文件。
 - **消息发送**：通过 `sendmessage` 接口回复用户，当前仅支持文本（iLink API 限制）。
 
@@ -648,11 +648,11 @@ NapCat  ──反向 WS──▶  QwenPaw (:6199/ws)
 也可直接在智能体工作区的 `agent.json`（如 `~/.qwenpaw/workspaces/default/agent.json`）中配置：
 
 ```json
-"weixin": {
+"wechat": {
   "enabled": true,
   "bot_prefix": "[BOT]",
   "bot_token": "your_bot_token",
-  "bot_token_file": "~/.qwenpaw/weixin_bot_token",
+  "bot_token_file": "~/.qwenpaw/wechat_bot_token",
   "base_url": "",
   "media_dir": "~/.qwenpaw/media",
   "dm_policy": "open",
@@ -665,7 +665,7 @@ NapCat  ──反向 WS──▶  QwenPaw (:6199/ws)
 | 字段             | 类型   | 默认值                        | 说明                                                |
 | ---------------- | ------ | ----------------------------- | --------------------------------------------------- |
 | `bot_token`      | string | `""`                          | 扫码登录后获取的 Bearer Token；留空则启动时引导扫码 |
-| `bot_token_file` | string | `~/.qwenpaw/weixin_bot_token` | Token 持久化路径，下次启动自动读取                  |
+| `bot_token_file` | string | `~/.qwenpaw/wechat_bot_token` | Token 持久化路径，下次启动自动读取                  |
 | `base_url`       | string | 官方默认地址                  | iLink API 地址，一般留空使用默认值                  |
 | `media_dir`      | string | `~/.qwenpaw/media`            | 接收到的图片、文件保存目录                          |
 
@@ -674,12 +674,12 @@ NapCat  ──反向 WS──▶  QwenPaw (:6199/ws)
 也可通过环境变量配置：
 
 ```bash
-WEIXIN_CHANNEL_ENABLED=1
-WEIXIN_BOT_TOKEN=your_bot_token
-WEIXIN_BOT_TOKEN_FILE=~/.qwenpaw/weixin_bot_token
-WEIXIN_MEDIA_DIR=~/.qwenpaw/media
-WEIXIN_DM_POLICY=open
-WEIXIN_GROUP_POLICY=open
+WECHAT_CHANNEL_ENABLED=1
+WECHAT_BOT_TOKEN=your_bot_token
+WECHAT_BOT_TOKEN_FILE=~/.qwenpaw/wechat_bot_token
+WECHAT_MEDIA_DIR=~/.qwenpaw/media
+WECHAT_DM_POLICY=open
+WECHAT_GROUP_POLICY=open
 ```
 
 ---
@@ -915,6 +915,40 @@ Matrix 频道通过 [matrix-nio](https://github.com/poljar/matrix-nio) 库将 Qw
 - Matrix 频道当前**仅支持文本消息**（不支持图片/文件附件）。
 - 机器人只能接收已加入房间的消息，发消息前请先邀请机器人进入对应房间。
 - 如使用自建服务器，将 `homeserver` 设置为你的服务器地址（例如 `https://matrix.example.com`）。
+
+---
+
+## 腾讯元宝（Yuanbao）
+
+元宝频道通过 protobuf WebSocket 连接腾讯元宝 AI 助手平台，支持私聊和群聊，支持图片/文件发送。
+
+### 创建 Bot 并配置
+
+1. 打开腾讯元宝，点击 **我的Bot** → **创建Bot**。
+
+   ![创建Bot](https://img.alicdn.com/imgextra/i3/O1CN01ChYAcN1L0b4pj7ODV_!!6000000001237-2-tps-2112-1440.png)
+
+2. 在 Bot 设置中找到 **方式2**，获取 **AppID** 和 **AppSecret**，填入 QwenPaw 的频道设置中，点击 **我已操作**。
+
+   ![AppID 和 AppSecret](https://img.alicdn.com/imgextra/i2/O1CN01F4vbLs29ID63r4cGf_!!6000000008044-2-tps-2112-1440.png)
+
+**配置示例：**
+
+```json
+"yuanbao": {
+  "enabled": true,
+  "app_id": "你的 AppID",
+  "app_secret": "你的 AppSecret"
+}
+```
+
+**元宝专属字段说明：**
+
+| 字段         | 类型   | 默认值                    | 说明                 |
+| ------------ | ------ | ------------------------- | -------------------- |
+| `app_id`     | string | `""`（必填）              | 元宝平台的 AppID     |
+| `app_secret` | string | `""`（必填）              | 元宝平台的 AppSecret |
+| `api_domain` | string | `bot.yuanbao.tencent.com` | REST API 域名        |
 
 ---
 
@@ -1326,8 +1360,9 @@ pip install "qwenpaw[sip,sip-livekit]"
 | Mattermost | mattermost | url, bot_token; 可选 show_typing, dm_policy, allow_from                                                |
 | Matrix     | matrix     | homeserver, user_id, access_token                                                                      |
 | 企业微信   | wecom      | bot_id, secret；可选 media_dir                                                                         |
-| 微信个人   | weixin     | bot_token（或扫码登录）；可选 bot_token_file, base_url, media_dir                                      |
+| 微信个人   | wechat     | bot_token（或扫码登录）；可选 bot_token_file, base_url, media_dir                                      |
 | 小艺       | xiaoyi     | ak, sk, agent_id；可选 ws_url                                                                          |
+| 元宝       | yuanbao    | app_id, app_secret；可选 api_domain, media_dir                                                         |
 | Voice      | voice      | twilio_account_sid, twilio_auth_token, phone_number, phone_number_sid；可选 tts_provider, stt_provider |
 
 所有频道均支持本页顶部「通用字段」中介绍的访问控制字段（`dm_policy`、`group_policy`、`allow_from`、`deny_message`、`require_mention`）。
@@ -1368,6 +1403,7 @@ pip install "qwenpaw[sip,sip-livekit]"
 | Mattermost | ✓        | ✓        | 🚧       | 🚧       | ✓        | ✓        | ✓        | 🚧       | 🚧       | ✓        |
 | Matrix     | ✓        | ✓        | ✓        | ✓        | ✓        | ✓        | ✓        | ✓        | ✓        | ✓        |
 | 小艺       | ✓        | ✓        | ✗        | ✗        | ✓        | ✓        | 🚧       | 🚧       | 🚧       | 🚧       |
+| 元宝       | ✓        | ✓        | ✗        | ✓        | ✓        | ✓        | ✓        | ✓        | ✓        | ✓        |
 | Voice      | ✗        | ✗        | ✗        | ✓        | ✗        | ✗        | ✗        | ✗        | ✓        | ✗        |
 
 说明：
@@ -1382,6 +1418,7 @@ pip install "qwenpaw[sip,sip-livekit]"
 - **微信个人（iLink）**：HTTP 长轮询接收，支持文本、图片（AES-128-ECB 解密）、语音（ASR 转录文字）、文件和视频；发送支持文本、图片、文件和视频；音频文件（如 MP3）因 iLink API 限制暂不支持。
 - **Matrix**：接收图片 / 视频 / 音频 / 文件（通过 `mxc://` 媒体 URL）；发送时将文件上传至服务器后以原生 Matrix 媒体消息（`m.image`、`m.video`、`m.audio`、`m.file`）发出。
 - **小艺**：支持接收文本、图片（JPEG/PNG/BMP/WEBP）和文件（PDF/DOC/DOCX/PPT/PPTX/XLS/XLSX/TXT）；平台限制不支持视频和音频。
+- **元宝**：支持接收文本、图片、音频；发送支持文本、图片、视频、音频和文件（通过 COS CDN 上传）；平台不转发视频消息给 Bot。
 - **Voice**：纯语音通话频道，接收用户语音并转为文本，Agent 回复转为语音播放；不支持其他格式。
 
 ### 通过 HTTP 修改配置

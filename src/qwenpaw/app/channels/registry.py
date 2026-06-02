@@ -32,7 +32,8 @@ _BUILTIN_SPECS: dict[str, tuple[str, str]] = {
     "sip": (".sip", "SIPChannel"),
     "wecom": (".wecom", "WecomChannel"),
     "xiaoyi": (".xiaoyi", "XiaoYiChannel"),
-    "weixin": (".weixin", "WeixinChannel"),
+    "yuanbao": (".yuanbao", "YuanbaoChannel"),
+    "wechat": (".wechat", "WeChatChannel"),
     "onebot": (".onebot", "OneBotChannel"),
 }
 

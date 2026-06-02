@@ -8,8 +8,14 @@ import { useTranslation } from "react-i18next";
 import { useAgentStore } from "../../../stores/agentStore";
 import { useAppMessage } from "../../../hooks/useAppMessage";
 import api from "../../../api";
+import { useUploadLimitStore } from "../../../stores/uploadLimitStore";
 import { invalidateSkillCache } from "../../../api/modules/skill";
+import type { SecurityScanErrorResponse } from "../../../api/modules/security";
 import { parseErrorDetail } from "../../../utils/error";
+import {
+  checkScanWarnings as checkScanWarningsShared,
+  showScanErrorModal,
+} from "../../../utils/scanError";
 import { useSkills } from "./useSkills";
 import { useSkillFilter } from "./useSkillFilter";
 
@@ -29,8 +35,6 @@ export type DownloadConflict =
       source_language: string;
       current_language: string;
     };
-
-const MAX_UPLOAD_SIZE_MB = 100;
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 
@@ -125,6 +129,15 @@ export function useSkillsPage() {
       });
     });
 
+  const checkScanWarnings = async (skillName: string) => {
+    await checkScanWarningsShared(
+      skillName,
+      api.getBlockedHistory,
+      api.getSkillScanner,
+      t,
+    );
+  };
+
   const toggleSelect = (name: string) => {
     setSelectedSkills((prev) => {
       const next = new Set(prev);
@@ -163,10 +176,11 @@ export function useSkillsPage() {
       return;
     }
     const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB > MAX_UPLOAD_SIZE_MB) {
+    const uploadLimit = useUploadLimitStore.getState().uploadMaxSizeMb;
+    if (uploadLimit !== null && sizeMB > uploadLimit) {
       message.warning(
         t("skills.fileSizeExceeded", {
-          limit: MAX_UPLOAD_SIZE_MB,
+          limit: uploadLimit,
           size: sizeMB.toFixed(1),
         }),
       );
@@ -544,6 +558,76 @@ export function useSkillsPage() {
     }
   };
 
+  // ── Batch enable / disable ───────────────────────────────────────────────
+
+  const handleBatchEnable = async () => {
+    const names = Array.from(selectedSkills);
+    if (names.length === 0) return;
+    try {
+      const { results } = await api.batchEnableSkills(names);
+      const entries = Object.entries(results);
+      const succeeded = entries
+        .filter(([, r]) => r.success)
+        .map(([name]) => name);
+      const failed = entries.filter(([, r]) => r.success === false);
+      for (const [, result] of failed) {
+        const detail = result.detail;
+        if (result.reason !== "security_scan_failed" || !detail) continue;
+        showScanErrorModal(detail as SecurityScanErrorResponse, t);
+      }
+      if (failed.length > 0) {
+        message.warning(
+          t("skills.batchEnablePartial", {
+            enabled: names.length - failed.length,
+            failed: failed.length,
+          }),
+        );
+      } else {
+        message.success(
+          t("skills.batchEnableSuccess", { count: names.length }),
+        );
+      }
+      clearSelection();
+      invalidateSkillCache({ agentId: selectedAgent });
+      await refreshSkills();
+      for (const name of succeeded) {
+        await checkScanWarnings(name);
+      }
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : t("skills.batchEnableFailed"),
+      );
+    }
+  };
+
+  const handleBatchDisable = async () => {
+    const names = Array.from(selectedSkills);
+    if (names.length === 0) return;
+    try {
+      const { results } = await api.batchDisableSkills(names);
+      const failed = Object.entries(results).filter(([, r]) => !r.success);
+      if (failed.length > 0) {
+        message.warning(
+          t("skills.batchDisablePartial", {
+            disabled: names.length - failed.length,
+            failed: failed.length,
+          }),
+        );
+      } else {
+        message.success(
+          t("skills.batchDisableSuccess", { count: names.length }),
+        );
+      }
+      clearSelection();
+      invalidateSkillCache({ agentId: selectedAgent });
+      await refreshSkills();
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : t("skills.batchDisableFailed"),
+      );
+    }
+  };
+
   // ── Batch delete ────────────────────────────────────────────────────────
 
   const handleBatchDelete = async () => {
@@ -631,6 +715,8 @@ export function useSkillsPage() {
     handleSubmit,
     handleUploadToPool,
     handleDownloadFromPool,
+    handleBatchEnable,
+    handleBatchDisable,
     handleBatchDelete,
     handleUploadClick,
     handleFileChange,

@@ -12,6 +12,7 @@ import zhCN from "antd/locale/zh_CN";
 import enUS from "antd/locale/en_US";
 import jaJP from "antd/locale/ja_JP";
 import ruRU from "antd/locale/ru_RU";
+import idID from "antd/locale/id_ID";
 import type { Locale } from "antd/es/locale";
 import { theme as antdTheme } from "antd";
 import dayjs from "dayjs";
@@ -19,6 +20,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/zh-cn";
 import "dayjs/locale/ja";
 import "dayjs/locale/ru";
+import "dayjs/locale/id";
 dayjs.extend(relativeTime);
 import MainLayout from "./layouts/MainLayout";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
@@ -30,6 +32,7 @@ import { lazyImportWithRetry } from "./utils/lazyWithRetry";
 const LoginPage = lazyImportWithRetry("./pages/Login/index");
 import { authApi } from "./api/modules/auth";
 import { languageApi } from "./api/modules/language";
+import { useUploadLimitStore } from "./stores/uploadLimitStore";
 import { getApiUrl, getApiToken, clearAuthToken } from "./api/config";
 import "./styles/layout.css";
 import "./styles/form-override.css";
@@ -39,6 +42,7 @@ const antdLocaleMap: Record<string, Locale> = {
   en: enUS,
   ja: jaJP,
   ru: ruRU,
+  id: idID,
 };
 
 const dayjsLocaleMap: Record<string, string> = {
@@ -46,6 +50,7 @@ const dayjsLocaleMap: Record<string, string> = {
   en: "en",
   ja: "ja",
   ru: "ru",
+  id: "id",
 };
 
 const GlobalStyle = createGlobalStyle`
@@ -141,6 +146,7 @@ function AppInner() {
           console.error("Failed to fetch language preference:", err),
         );
     }
+    useUploadLimitStore.getState().fetch();
   }, []);
 
   useEffect(() => {

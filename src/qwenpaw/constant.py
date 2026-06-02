@@ -112,6 +112,27 @@ SECRET_DIR = (
 
 PROJECT_NAME = "QwenPaw"
 
+# Subdirectory name inside each agent's workspace that holds cloned / imported
+# coding projects.
+# Full path = <workspace_dir> / CODING_PROJECT_SUBDIR / <name>
+CODING_PROJECT_SUBDIR = "coding_projects"
+
+
+def _resolve_docs_dir() -> Path | None:
+    """Find QwenPaw documentation directory across all install methods."""
+    _pkg_docs = Path(__file__).resolve().parent / "docs"
+    if _pkg_docs.is_dir() and any(_pkg_docs.glob("*.md")):
+        return _pkg_docs
+    _src_docs = (
+        Path(__file__).resolve().parents[2] / "website" / "public" / "docs"
+    )
+    if _src_docs.is_dir() and any(_src_docs.glob("*.md")):
+        return _src_docs
+    return None
+
+
+DOCS_DIR: Path | None = _resolve_docs_dir()
+
 # Default media directory for channels (cross-platform)
 DEFAULT_MEDIA_DIR = WORKING_DIR / "media"
 
@@ -166,6 +187,7 @@ HEARTBEAT_FILE = EnvVarLoader.get_str("QWENPAW_HEARTBEAT_FILE", "HEARTBEAT.md")
 HEARTBEAT_DEFAULT_EVERY = "6h"
 HEARTBEAT_DEFAULT_TARGET = "main"
 HEARTBEAT_TARGET_LAST = "last"
+HEARTBEAT_TARGET_INBOX = "inbox"
 
 # Debug history file for /dump_history and /load_history commands
 DEBUG_HISTORY_FILE = EnvVarLoader.get_str(
@@ -237,15 +259,19 @@ MEMORY_COMPACT_RATIO = EnvVarLoader.get_float(
     allow_inf=False,
 )
 
-DASHSCOPE_BASE_URL = EnvVarLoader.get_str(
-    "DASHSCOPE_BASE_URL",
-    "https://dashscope.aliyuncs.com/compatible-mode/v1",
-)
-
 # CORS configuration — comma-separated list of allowed origins for dev mode.
 # Example: QWENPAW_CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173"
 # When unset, CORS middleware is not applied.
 CORS_ORIGINS = EnvVarLoader.get_str("QWENPAW_CORS_ORIGINS", "").strip()
+
+# Upload size limit (MB).  None = no limit.
+UPLOAD_MAX_SIZE_MB: int | None = (
+    int(v)
+    if (v := EnvVarLoader.get_str("QWENPAW_UPLOAD_MAX_SIZE_MB", ""))
+    .strip()
+    .isdigit()
+    else None
+)
 
 # LLM API retry configuration
 LLM_MAX_RETRIES = EnvVarLoader.get_int(

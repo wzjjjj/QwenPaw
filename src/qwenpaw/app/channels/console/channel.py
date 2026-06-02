@@ -9,13 +9,13 @@ endpoint or via POST /console/chat. This channel handles the **output** side:
 whenever a completed message event or a proactive send arrives, it is
 pretty-printed to the terminal.
 """
+
 from __future__ import annotations
 
 import copy
 import logging
 import os
 import sys
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
@@ -238,7 +238,8 @@ class ConsoleChannel(BaseChannel):
                 if url:
                     return FileContent(
                         type=ContentType.FILE,
-                        filename=getattr(part, "filename", None) or url,
+                        filename=getattr(part, "filename", None)
+                        or Path(url).name,
                         file_url=url,
                     )
             elif content_type == ContentType.TEXT:
@@ -400,18 +401,16 @@ class ConsoleChannel(BaseChannel):
                     if usage_data and hasattr(event, "usage"):
                         setattr(event, "usage", usage_data)
 
-                if hasattr(event, "model_dump_json"):
-                    data = event.model_dump_json()
-                elif hasattr(event, "json"):
-                    data = event.json()
-                else:
-                    data = json.dumps({"text": str(event)})
+                data = self._serialize_event_for_sse(event)
                 yield f"data: {data}\n\n"
 
                 if obj == "message" and status == RunStatus.Completed:
                     media_message = await self._extract_media_message(event)
                     if media_message:
-                        yield f"data: {media_message.model_dump_json()}\n\n"
+                        media_json = self._serialize_event_for_sse(
+                            media_message,
+                        )
+                        yield f"data: {media_json}\n\n"
 
                     parts = self._message_to_content_parts(event)
                     self._print_parts(parts, ev_type)
@@ -513,8 +512,7 @@ class ConsoleChannel(BaseChannel):
     def _print_error(self, err: str) -> None:
         ts = _ts()
         self._safe_print(
-            f"\n{_RED}{_BOLD}❌ [{ts}] Error{_RESET}\n"
-            f"{_RED}{err}{_RESET}\n",
+            f"\n{_RED}{_BOLD}❌ [{ts}] Error{_RESET}\n{_RED}{err}{_RESET}\n",
         )
 
     def _parts_to_text(
@@ -556,7 +554,11 @@ class ConsoleChannel(BaseChannel):
             f"{prefix}{text}\n",
         )
         sid = (meta or {}).get("session_id")
-        if sid and text.strip():
+        if (
+            sid
+            and text.strip()
+            and not (meta or {}).get("suppress_console_push")
+        ):
             await push_store_append(sid, text.strip())
 
     async def send_content_parts(
@@ -570,7 +572,7 @@ class ConsoleChannel(BaseChannel):
         """
         self._print_parts(parts)
         sid = (meta or {}).get("session_id")
-        if sid:
+        if sid and not (meta or {}).get("suppress_console_push"):
             body = self._parts_to_text(parts, meta)
             if body.strip():
                 await push_store_append(sid, body.strip())
