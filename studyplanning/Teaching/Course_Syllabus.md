@@ -31,6 +31,18 @@
   - 练习产出：画出“单次请求主链路”时序图 + 标出 4 个关键入口文件
   - 入口：[Module_01_Lesson_01_overview.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_01_overview.md)
 
+- Lesson 02：入口与数据形状（Entrypoints & Shapes）  
+  - 能列出 QwenPaw 的 4 类入口（CLI / Console API / Runtime API / Channels）及其职责边界  
+  - 能整理一次请求的最小字段集（agent_id/session_id/root_session_id/channel/user_id/input blocks）并标注来源与使用位置  
+  - 练习产出：入口矩阵 + shape 字段表（带代码锚点证据）
+  - 入口：[Module_01_Lesson_02_entrypoints_and_shapes.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_02_entrypoints_and_shapes.md)
+
+- Lesson 03：配置与会话持久化（Config & Sessions）  
+  - 理解配置加载的工程约束：mtime 缓存、auto-repair、校验失败降级、回退默认  
+  - 理解会话持久化的工程约束：跨平台文件名、JSON 损坏恢复、最坏情况下如何继续运行  
+  - 练习产出：配置失败语义表 + 会话失败语义表 + 最小不变量清单
+  - 入口：[Module_01_Lesson_03_config_and_sessions.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_03_config_and_sessions.md)
+
 ### Module 02：项目定位与整体架构（把“要做什么”变成“系统怎么落地”）
 
 - Lesson 01：项目定位 + 架构分层 + 模块交互  
@@ -114,3 +126,53 @@
   - 能按“必做/选做”清单设计并接入一个新渠道，并知道如何用现有测试/契约做验证  
   - 练习产出：写出一个新渠道的契约草图 + 最小验证用例清单
   - 入口：[Module_08_Lesson_03_console_contrast_extension_and_tests.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_03_console_contrast_extension_and_tests.md)
+
+### Module 09：部署接口三件套（模型侧 / 工具侧 / 安全侧）
+
+- Lesson 01：部署接口三件套：模型侧 / 工具侧 / 安全侧（算法工程师视角）  
+  - 说清楚企业部署里必须对齐的三块接口面：Provider（推理服务）、Tool/MCP（能力入口）、Tool Guard/Approval（治理入口）  
+  - 练习产出：为一个 agent 写出“最小可用的部署清单”（模型/工具/审批默认策略）
+  - 入口：[Module_09_Lesson_01_deployment_interfaces_model_tools_security.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_09_Lesson_01_deployment_interfaces_model_tools_security.md)
+
+### Module 10：Python 工程能力专修（面向 Agent/后端真实代码）
+
+- Lesson 01：asyncio 工程化：并发、线程与取消（以 QwenPaw 为例）  
+  - 能读懂项目里的异步边界：哪些是 `async` I/O，哪些必须 `to_thread`，哪些需要队列串行  
+  - 能解释：为什么会出现“线程 + 自建 event loop”，以及如何安全地停机与清理任务  
+  - 练习产出：给 1 条异步链路补齐“超时 + 取消 + 资源释放”的最小闭环（可用测试验证）
+  - 入口：[Module_10_Lesson_01_asyncio_in_agent_systems.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_01_asyncio_in_agent_systems.md)
+- Lesson 02：类型注解的工程落地：把复杂系统变得可读可改  
+  - 能在项目里熟练使用 `| None`、`TypedDict`、`TYPE_CHECKING`、泛型容器等常见模式  
+  - 能用类型系统表达接口契约（例如 tool 输出、channel payload、provider/model 信息）  
+  - 练习产出：为一个真实模块补齐类型边界（函数签名 + 数据结构），并通过最小单测或运行路径验证
+  - 入口：[Module_10_Lesson_02_typing_for_large_codebases.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_02_typing_for_large_codebases.md)
+- Lesson 03：Pydantic v2：配置模型与 Schema 是怎么“在工程里跑起来”的  
+  - 能手写/维护 BaseModel：Field、default_factory、model_config、validator（v2）  
+  - 能解释“配置加载/校验/落盘/回显”链路，并定位校验失败原因  
+  - 练习产出：新增 1 个配置字段（带校验）并让它从 config.json/接口进入系统，且有最小测试
+  - 入口：[Module_10_Lesson_03_pydantic_v2_in_qwenpaw.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_03_pydantic_v2_in_qwenpaw.md)
+- Lesson 04：装饰器与上下文管理器：理解框架式代码的“隐式控制流”  
+  - 能看懂常见装饰器：click 命令栈、Pydantic validator、缓存（lru_cache）与权限/治理式包装  
+  - 能读懂/编写 context manager：资源申请与释放、异常吞吐策略（suppress）、可重入与幂等  
+  - 练习产出：把 1 个“手写 try/finally 清理块”重构成可复用的 context manager，并补齐测试
+  - 入口：[Module_10_Lesson_04_decorators_and_context_managers.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_04_decorators_and_context_managers.md)
+- Lesson 05：测试与调试：让你能“大胆改、快速回归、不怕线上”  
+  - 能在 QwenPaw 的 pytest 体系里写异步测试（pytest-asyncio）、隔离临时目录、mock 外部依赖  
+  - 能把日志/异常当成接口：用可观测性证据定位并修复 bug（超时、竞态、配置错误、序列化问题）  
+  - 练习产出：为一次真实改动补齐回归用例（unit + 最小集成），并能解释覆盖的失败模式
+  - 入口：[Module_10_Lesson_05_testing_debugging_and_tooling.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_05_testing_debugging_and_tooling.md)
+
+## Next Iteration Backlog（迭代式推进的候选课）
+
+以下是对齐 nanobot 风格（Harness Engineering 链路拆解）的候选增补课，按你反馈逐次推进：
+
+- Module 02（Turn/Queue）
+  - `Module_02_Lesson_01_messagebus_and_queue_semantics.md`（TODO）
+  - `Module_02_Lesson_02_runner_turn_state_machine.md`（TODO）
+  - `Module_02_Lesson_03_streaming_artifacts_and_events.md`（TODO）
+- Module 03（Runner 可靠性）
+  - `Module_03_Lesson_01_runner_loop_skeleton.md`（TODO）
+  - `Module_03_Lesson_02_injection_and_checkpoint.md`（TODO）
+  - `Module_03_Lesson_03_errors_and_recovery.md`（TODO）
+- Week 学习计划（TODO）：`Week_01.md` … `Week_08.md`
+- Capstone（TODO）：`Capstone_Project_Brief.md`

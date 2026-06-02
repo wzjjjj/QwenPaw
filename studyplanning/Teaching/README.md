@@ -44,6 +44,8 @@
 
 - Module 01：总体概述（发展现状 / 学习框架 / 学习路径）
   - [Module\_01\_Lesson\_01\_overview.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_01_overview.md)
+  - [Module\_01\_Lesson\_02\_entrypoints\_and\_shapes.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_02_entrypoints_and_shapes.md)
+  - [Module\_01\_Lesson\_03\_config\_and\_sessions.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_01_Lesson_03_config_and_sessions.md)
 - Module 02：项目定位与整体架构（应用场景 / 分层设计 / 模块交互）
   - [Module\_02\_Lesson\_01\_positioning\_and\_architecture.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_02_Lesson_01_positioning_and_architecture.md)
 - Module 03：Agent 主体与上下文/记忆/状态（决策系统 / 推理机制 / 上下文工程 / 记忆管理 / 状态管理）
@@ -62,6 +64,31 @@
   - [Module\_08\_Lesson\_01\_async\_mentality\_for\_channels.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_01_async_mentality_for_channels.md)
   - [Module\_08\_Lesson\_02\_weixin\_inbound\_to\_reply\_end\_to\_end.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_02_weixin_inbound_to_reply_end_to_end.md)
   - [Module\_08\_Lesson\_03\_console\_contrast\_extension\_and\_tests.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_08_Lesson_03_console_contrast_extension_and_tests.md)
+- Module 09：部署接口三件套（模型侧 / 工具侧 / 安全侧）
+  - [Module\_09\_Lesson\_01\_deployment\_interfaces\_model\_tools\_security.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_09_Lesson_01_deployment_interfaces_model_tools_security.md)
+- Module 10：Python 工程能力专修（异步 / 类型注解 / Pydantic / 装饰器与上下文管理 / 测试与调试）
+  - [Module\_10\_Lesson\_01\_asyncio\_in\_agent\_systems.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_01_asyncio_in_agent_systems.md)
+  - [Module\_10\_Lesson\_02\_typing\_for\_large\_codebases.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_02_typing_for_large_codebases.md)
+  - [Module\_10\_Lesson\_03\_pydantic\_v2\_in\_qwenpaw.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_03_pydantic_v2_in_qwenpaw.md)
+  - [Module\_10\_Lesson\_04\_decorators\_and\_context\_managers.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_04_decorators_and_context_managers.md)
+  - [Module\_10\_Lesson\_05\_testing\_debugging\_and\_tooling.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Teaching/Module_10_Lesson_05_testing_debugging_and_tooling.md)
+
+## 配套架构报告（建议与 Module 01 同步阅读）
+
+- [QwenPaw\_Backend\_Mainchain\_Invariants.md](file:///d:/编程学习记录/QwenPaw/studyplanning/Reports/QwenPaw_Backend_Mainchain_Invariants.md)
+
+## Next Iteration Backlog（按 nanobot 风格补齐链路课）
+
+- Module 02（Turn/Queue）
+  - `Module_02_Lesson_01_messagebus_and_queue_semantics.md`（TODO）
+  - `Module_02_Lesson_02_runner_turn_state_machine.md`（TODO）
+  - `Module_02_Lesson_03_streaming_artifacts_and_events.md`（TODO）
+- Module 03（Runner 可靠性）
+  - `Module_03_Lesson_01_runner_loop_skeleton.md`（TODO）
+  - `Module_03_Lesson_02_injection_and_checkpoint.md`（TODO）
+  - `Module_03_Lesson_03_errors_and_recovery.md`（TODO）
+- Week 学习计划（TODO）：`Week_01.md` … `Week_08.md`
+- Capstone（TODO）：`Capstone_Project_Brief.md`
 
 ## 学习建议（偏后端视角）
 
